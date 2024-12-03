@@ -2,11 +2,13 @@ package study.querydsl.repository;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import study.querydsl.dto.MemberSearchCondition;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.QMemberTeamDto;
@@ -79,7 +81,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     // 데이터 내용과 카운트를 별도로 조회하는 방법
     @Override
     public Page<MemberTeamDto> searchPageComplex(MemberSearchCondition condition, Pageable pageable) {
-        List<MemberTeamDto> results = queryFactory
+        List<MemberTeamDto> content = queryFactory
                 .select(new QMemberTeamDto(
                         member.id.as("memberId"),
                         member.username,
@@ -98,7 +100,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
+        JPAQuery<Member> countQuery = queryFactory
                 .select(member)
                 .from(member)
                 .leftJoin(member.team, team)
@@ -107,12 +109,11 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
                         ageLeo(condition.getAgeLoe())
-                )
-                .fetchCount();
+                );
 
-        return new PageImpl<>(results, pageable, total);
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount);
+//        return new PageImpl<>(results, pageable, total);
     }
-
 
 
     private BooleanExpression usernameEq(String username) {
