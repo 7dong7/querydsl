@@ -22,14 +22,17 @@ import static study.querydsl.entity.QTeam.team;
 
 public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
+
     private final JPAQueryFactory queryFactory;
 
     public MemberRepositoryImpl(EntityManager em) {
         this.queryFactory = new JPAQueryFactory(em);
     }
 
+
     @Override
     public List<MemberTeamDto> search(MemberSearchCondition condition) {
+
 
         return queryFactory
                 .select(new QMemberTeamDto(
@@ -44,7 +47,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         usernameEq(condition.getUsername()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
-                        ageLeo(condition.getAgeLoe())
+                        ageLoe(condition.getAgeLoe())
                 )
                 .fetch();
     }
@@ -66,7 +69,34 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         usernameEq(condition.getUsername()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
-                        ageLeo(condition.getAgeLoe())
+                        ageLoe(condition.getAgeLoe())
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetchResults();
+
+        List<MemberTeamDto> content = results.getResults();
+        long total = results.getTotal();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    public Page<MemberTeamDto> searchPageSimple2(MemberSearchCondition condition, Pageable pageable) {
+
+        QueryResults<MemberTeamDto> results = queryFactory
+                .select(new QMemberTeamDto(
+                        member.id.as("memberId"),
+                        member.username,
+                        member.age,
+                        team.id.as("teamId"),
+                        team.name.as("teamName")))
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(condition.getUsername()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLoe(condition.getAgeLoe())
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -94,7 +124,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         usernameEq(condition.getUsername()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
-                        ageLeo(condition.getAgeLoe())
+                        ageLoe(condition.getAgeLoe())
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -108,7 +138,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         usernameEq(condition.getUsername()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
-                        ageLeo(condition.getAgeLoe())
+                        ageLoe(condition.getAgeLoe())
                 );
 //        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount);
 
@@ -121,7 +151,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         usernameEq(condition.getUsername()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
-                        ageLeo(condition.getAgeLoe())
+                        ageLoe(condition.getAgeLoe())
                 );
 
         int size = queryFactory
@@ -131,7 +161,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         usernameEq(condition.getUsername()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
-                        ageLeo(condition.getAgeLoe())
+                        ageLoe(condition.getAgeLoe())
                 )
                 .fetch().size(); // 반환값 int 이다
         // Long type으로 받환 받고 싶다면 fetchOne()을 사용
@@ -151,10 +181,9 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
     private BooleanExpression ageGoe(Integer ageGoe) {
         return ageGoe != null ? member.age.goe(ageGoe) : null;
-
     }
 
-    private BooleanExpression ageLeo(Integer ageLoe) {
+    private BooleanExpression ageLoe(Integer ageLoe) {
         return ageLoe != null ? member.age.loe(ageLoe) : null;
     }
 }
