@@ -110,8 +110,33 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         ageGoe(condition.getAgeGoe()),
                         ageLeo(condition.getAgeLoe())
                 );
+//        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount);
 
-        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount);
+
+        // 다시 작성된 countQuery
+        JPAQuery<Long> countQuery2 = queryFactory
+                .select(member.count())
+                .from(member)
+                .where(
+                        usernameEq(condition.getUsername()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLeo(condition.getAgeLoe())
+                );
+
+        int size = queryFactory
+                .select(member.count())
+                .from(member)
+                .where(
+                        usernameEq(condition.getUsername()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLeo(condition.getAgeLoe())
+                )
+                .fetch().size(); // 반환값 int 이다
+        // Long type으로 받환 받고 싶다면 fetchOne()을 사용
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery2::fetchOne);
 //        return new PageImpl<>(results, pageable, total);
     }
 
